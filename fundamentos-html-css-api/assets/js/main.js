@@ -1,36 +1,46 @@
- 
-const offset = 0;
+const pokemonList = document.getElementById("pokemonList");
+const loadMoreBt = document.getElementById("loadMoreBt");
+const maxRecords = 151;
 const limit = 10;
-const url = `https://pokeapi.co/api/v2/pokemon?offset=${offset}&limit=${limit}`;
+let offset = 0;
 
-function convertPokemonToLi(pokemon) {
-    return `
-    <li class="pokemon">
-        <span class="pokemon__number">#001</span>
-        <span class="pokemon__name">${pokemon.name}</span>
-        <div class="pokemon__detail">
-            <ol class="pokemon__types">
-                <li class="pokemon__type">Grass</li>
-                <li class="pokemon__type">Poison</li>
-            </ol>
-            <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/1.svg" alt="${pokemon.name}">
-        </div>
-    </li>   
-    `
+function loadPokemonsItems(offset, limit) {
+  pokeApi.getPokemons(offset, limit).then((pokemons = []) => {
+    const newHTML = pokemons
+      .map(
+        (pokemon) => `
+          <li class="pokemon ${pokemon.type}">
+              <span class="pokemon__number">#${pokemon.number}</span>
+              <span class="pokemon__name">${pokemon.name}</span>
+              <div class="pokemon__detail">
+                  <ol class="pokemon__types">
+                      ${pokemon.types
+                        .map(
+                          (type) =>
+                            `<li class="pokemon__type ${type}">${type}</li>`
+                        )
+                        .join("")}
+                  </ol>
+                  <img src="${pokemon.photo}" alt="${pokemon.name}">
+              </div>
+          </li>   
+        `
+      )
+      .join("");
+    pokemonList.innerHTML += newHTML;
+  });
 }
 
-const pokemonList = document.getElementById('pokemonList');
+loadPokemonsItems(offset, limit);
 
-fetch(url)
-    .then((response) => response.json())     // transforma o response em uma promise do body convertido em json
-    .then((jsonBody) => jsonBody.results)
-    .then((pokemons) => {
-
-        for (let i = 0; i < pokemons.length; i++) {
-            const pokemon = pokemons[i];
-            pokemonList.innerHTML += convertPokemonToLi(pokemon);
-        }
-
-    })     // recebe o body convertido em json e printa ele no console
-    .catch((error) => console.log(error))
- 
+loadMoreBt.addEventListener("click", () => {
+  offset += limit;
+  const qtdRecordNextPage = offset + limit;
+  if (qtdRecordNextPage >= maxRecords) {
+    const newLimit = maxRecords - offset;
+    loadPokemonsItems(offset, newLimit);
+    loadMoreBt.parentElement.removeChild(loadMoreBt); // pega o elemento pai do botão e remove o filho, que é o próprio botão
+  } else {
+    loadPokemonsItems(offset, limit);
+  }
+});
